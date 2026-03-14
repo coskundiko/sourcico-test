@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Database
+  db:
+    image: postgres:15
+    container_name: sourcico-db
+    restart: always
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: devdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis for Sessions and Permissions Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sourcico-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
