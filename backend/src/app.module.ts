@@ -24,7 +24,7 @@ import { RedisModule } from './redis/redis.module';
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
         synchronize: false,
-        logging: configService.get<string>('NODE_ENV') !== 'production',
+        logging: configService.get<string>('DB_LOGGING') === 'true',
       }),
     }),
     RolesModule,

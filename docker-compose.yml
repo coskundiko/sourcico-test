@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Database
   db:
     image: postgres:15
     container_name: sourcico-db
@@ -14,14 +13,50 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devuser -d devdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # Redis for Sessions and Permissions Cache
   redis:
     image: redis:7-alpine
     container_name: sourcico-redis
     restart: always
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sourcico-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: devuser
+      DB_PASSWORD: devpassword
+      DB_NAME: devdb
+      DB_LOGGING: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+      APP_URL: ${APP_URL:-http://localhost:5173}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:
