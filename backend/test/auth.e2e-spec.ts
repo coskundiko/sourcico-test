@@ -7,11 +7,12 @@ import { createMock } from '@golevelup/ts-jest';
 import { RedisClientType } from 'redis';
 import session from 'express-session';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
+import { seedE2EData } from './helpers/seed';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
 
   const mockRedisClient = createMock<RedisClientType>({
     get: jest.fn().mockResolvedValue(null),
@@ -28,20 +29,21 @@ describe('Auth (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
     app.setGlobalPrefix('api');
     app.useGlobalFilters(new GlobalExceptionFilter());
     app.use(
       session({
         secret: 'test_secret',
-        resave: true,
-        saveUninitialized: true,
+        resave: false,
+        saveUninitialized: false,
         cookie: { httpOnly: true, secure: false, sameSite: 'strict' },
       }),
     );
     await app.init();
 
     dataSource = app.get(DataSource);
+    await seedE2EData(dataSource);
     agent = request.agent(app.getHttpServer());
   });
 
@@ -54,7 +56,7 @@ describe('Auth (e2e)', () => {
     const response = await agent.get('/api/auth/users').expect(200);
 
     expect(response.body.success).toBe(true);
-    expect(response.body.data).toHaveLength(3);
+    expect(response.body.data).toHaveLength(4); // admin, editor, viewer, toDelete
     expect(response.body.data.map((u: any) => u.email)).toContain('admin@test.com');
   });
 
@@ -81,7 +83,7 @@ describe('Auth (e2e)', () => {
     expect(response.body.data.email).toBe('admin@test.com');
   });
 
-  it('/api/auth/logout (POST) - should logout', async () => {
+  it('/api/auth/logout (POST) - should logout and clear session', async () => {
     await agent.post('/api/auth/logout').expect(200);
     const response = await agent.get('/api/auth/me').expect(401);
     expect(response.body.success).toBe(false);

@@ -1,6 +1,18 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, Injectable, Inject, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from 'redis';
+import type { RedisClientType } from 'redis';
+
+@Injectable()
+class RedisShutdownService implements OnApplicationShutdown {
+  constructor(@Inject('REDIS_CLIENT') private readonly client: RedisClientType) {}
+
+  async onApplicationShutdown() {
+    if (this.client.isOpen) {
+      await this.client.quit();
+    }
+  }
+}
 
 @Global()
 @Module({
@@ -19,6 +31,7 @@ import { createClient } from 'redis';
       },
       inject: [ConfigService],
     },
+    RedisShutdownService,
   ],
   exports: ['REDIS_CLIENT'],
 })

@@ -28,4 +28,11 @@ export class PermissionsCacheService {
     const key = `${this.CACHE_PREFIX}${userId}`;
     await this.redisClient.del(key);
   }
+
+  async clearAll(): Promise<void> {
+    const keys = await this.redisClient.keys(`${this.CACHE_PREFIX}*`);
+    if (keys.length > 0) {
+      await this.redisClient.del(keys);
+    }
+  }
 }

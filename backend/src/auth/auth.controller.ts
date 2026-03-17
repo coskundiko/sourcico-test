@@ -12,6 +12,11 @@ import { AuthService } from './auth.service';
 import { User } from '../users/entities/user.entity';
 import { successResponse, ApiResponse } from '../common/types/response';
 
+interface AppSession extends Record<string, any> {
+  userId?: number;
+  destroy: (cb: (err: Error | null) => void) => void;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -29,7 +34,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async selectUser(
     @Body('userId') userId: number,
-    @Session() session: Record<string, any>,
+    @Session() session: AppSession,
   ): Promise<ApiResponse<ReturnType<AuthController['mapUserResponse']>>> {
     const user = await this.authService.validateUser(userId);
     const permissions = await this.authService.getOrCachePermissions(userId, user);
@@ -40,7 +45,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Session() session: Record<string, any>): Promise<ApiResponse<null>> {
+  async logout(@Session() session: AppSession): Promise<ApiResponse<null>> {
     await new Promise<void>((resolve, reject) => {
       session.destroy((err: Error | null) => {
         if (err) reject(new Error('Failed to logout'));
@@ -53,7 +58,7 @@ export class AuthController {
 
   @Get('me')
   async me(
-    @Session() session: Record<string, any>,
+    @Session() session: AppSession,
   ): Promise<ApiResponse<ReturnType<AuthController['mapUserResponse']>>> {
     if (!session.userId) {
       throw new UnauthorizedException('Not authenticated');
