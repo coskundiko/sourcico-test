@@ -3,15 +3,19 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const redisClient = app.get('REDIS_CLIENT');
+
+  // Exception Filter
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Global Prefix
   app.setGlobalPrefix('api');
@@ -36,21 +40,6 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
-  // Redis & Session Setup
-  const redisClient = createClient({
-    socket: {
-      host: configService.get<string>('REDIS_HOST', 'localhost'),
-      port: configService.get<number>('REDIS_PORT', 6379),
-    },
-  });
-
-  try {
-    await redisClient.connect();
-  } catch (err) {
-    logger.error('Failed to connect to Redis. Cannot start application.', err);
-    process.exit(1);
-  }
 
   const redisStore = new RedisStore({
     client: redisClient,
