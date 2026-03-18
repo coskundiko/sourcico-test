@@ -24,6 +24,8 @@ import { RedisModule } from './redis/redis.module';
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
         synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/database/migrations/*.js'],
         logging: configService.get<string>('DB_LOGGING') === 'true',
       }),
     }),
