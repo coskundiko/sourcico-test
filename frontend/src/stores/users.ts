@@ -24,7 +24,7 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function createUser(data: { name: string; email: string; roleId: number }): Promise<boolean> {
+  async function createUser(data: { name: string; email: string; roleIds: number[] }): Promise<boolean> {
     loading.value = true
     error.value = null
     try {
@@ -40,7 +40,7 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function updateUser(id: number, data: { name?: string; email?: string; roleId?: number }): Promise<boolean> {
+  async function updateUser(id: number, data: { name?: string; email?: string; roleIds?: number[] }): Promise<boolean> {
     loading.value = true
     error.value = null
     try {

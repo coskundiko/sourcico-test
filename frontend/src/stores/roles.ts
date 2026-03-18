@@ -24,7 +24,23 @@ export const useRolesStore = defineStore('roles', () => {
     }
   }
 
-  async function updateRole(id: number, data: { permissionCodes: number[] }): Promise<boolean> {
+  async function createRole(name: string): Promise<boolean> {
+    loading.value = true
+    error.value = null
+    try {
+      await axios.post('/api/roles', { name })
+      await fetchRoles()
+      return true
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Failed to create role'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateRole(id: number, data: { name?: string; permissionCodes?: number[] }): Promise<boolean> {
     loading.value = true
     error.value = null
     try {
@@ -40,5 +56,21 @@ export const useRolesStore = defineStore('roles', () => {
     }
   }
 
-  return { roles, loading, error, fetchRoles, updateRole }
+  async function deleteRole(id: number): Promise<boolean> {
+    loading.value = true
+    error.value = null
+    try {
+      await axios.delete(`/api/roles/${id}`)
+      await fetchRoles()
+      return true
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } }
+      error.value = err.response?.data?.message ?? 'Failed to delete role'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { roles, loading, error, fetchRoles, createRole, updateRole, deleteRole }
 })

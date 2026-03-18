@@ -24,5 +24,6 @@ export interface UserListItem {
 export interface Role {
   id: number
   name: string
-  permissions: string[]
+  permissions: string[]   // dot-notation strings: 'user.view', etc.
+  usersCount: number
 }

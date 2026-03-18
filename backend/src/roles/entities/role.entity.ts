@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany } from 'typeorm';
 import { RolePermission } from './role-permission.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('roles')
 export class Role {
@@ -13,4 +14,7 @@ export class Role {
     cascade: true,
   })
   permissions: RolePermission[];
+
+  @ManyToMany(() => User, (user) => user.roles)
+  users: User[];
 }
