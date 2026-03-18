@@ -60,7 +60,7 @@ async function bootstrap() {
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: configService.get<string>('NODE_ENV') === 'production',
+        secure: configService.get<string>('COOKIE_SECURE', configService.get<string>('NODE_ENV') === 'production' ? 'true' : 'false') === 'true',
         sameSite: 'strict',
         maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
       },

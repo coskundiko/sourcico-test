@@ -11,10 +11,10 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: false })
   name: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: false })
   email: string;
 
   @Column({
@@ -24,7 +24,7 @@ export class User {
   })
   status: UserStatus;
 
-  @ManyToMany(() => Role)
+  @ManyToMany(() => Role, (role) => role.users)
   @JoinTable({
     name: 'user_roles',
     joinColumn: { name: 'user_id', referencedColumnName: 'id' },

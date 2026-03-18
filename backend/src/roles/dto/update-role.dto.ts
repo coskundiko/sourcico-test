@@ -1,9 +1,10 @@
-import { IsArray, IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Permission } from '../../common/enums/permission.enum';
 
 export class UpdateRoleDto {
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   name?: string;
 
   @IsOptional()

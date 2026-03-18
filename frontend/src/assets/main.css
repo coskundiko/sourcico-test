@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --color-teal-700: #0e7490;
+  --color-teal-600: #0f8aaa;
+  --color-teal-100: #cffafe;
+  --color-teal-50: #ecfeff;
+}
+
+* {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
