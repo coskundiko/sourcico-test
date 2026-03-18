@@ -82,14 +82,14 @@ function togglePermission(code: number) {
 async function saveChanges() {
   if (!selectedRole.value) return
   const data: { name?: string; permissionCodes?: number[] } = {}
-  if (editingName.value && editingName.value !== selectedRole.value.name) {
+  if (editingName.value !== selectedRole.value.name) {
     data.name = editingName.value
   }
   if (!isAdmin(selectedRole.value)) {
     data.permissionCodes = editingCodes.value
   }
-  await rolesStore.updateRole(selectedRole.value.id, data)
-  closeDetail()
+  const ok = await rolesStore.updateRole(selectedRole.value.id, data)
+  if (ok) closeDetail()
 }
 
 async function deleteRole(role: Role) {
@@ -104,10 +104,13 @@ const newRoleName = ref('')
 
 async function submitAddRole() {
   if (!newRoleName.value.trim()) return
-  const ok = await rolesStore.createRole(newRoleName.value.trim())
+  const name = newRoleName.value.trim()
+  const ok = await rolesStore.createRole(name)
   if (ok) {
     newRoleName.value = ''
     showAddRole.value = false
+    const created = rolesStore.roles.find((r) => r.name === name)
+    if (created) openDetail(created)
   }
 }
 
@@ -167,7 +170,7 @@ function permissionTags(role: Role) {
 
     <!-- ── ROLES LIST ── -->
     <div v-if="!selectedRole">
-      <div class="mb-4 flex justify-end">
+      <Teleport defer to="#header-actions">
         <Can permission="role.edit">
           <button
             @click="showAddRole = true"
@@ -177,7 +180,7 @@ function permissionTags(role: Role) {
             Add Role
           </button>
         </Can>
-      </div>
+      </Teleport>
 
       <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <table class="w-full text-sm">
@@ -249,6 +252,15 @@ function permissionTags(role: Role) {
 
     <!-- ── ROLE DETAIL ── -->
     <div v-else>
+      <Teleport defer to="#header-actions">
+        <Can v-if="!isAdmin(selectedRole)" permission="role.edit">
+          <button @click="saveChanges" :disabled="rolesStore.loading"
+            class="rounded-lg bg-[#0e7490] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0c6478] disabled:opacity-50">
+            {{ rolesStore.loading ? 'Saving…' : 'Save Changes' }}
+          </button>
+        </Can>
+      </Teleport>
+
       <!-- Back + title -->
       <div class="mb-6 flex items-center gap-3">
         <button @click="closeDetail" class="flex items-center gap-1 text-sm text-gray-500 hover:text-[#0e7490]">
@@ -361,25 +373,6 @@ function permissionTags(role: Role) {
           </div>
         </div>
 
-        <!-- Actions -->
-        <div v-if="!isAdmin(selectedRole)" class="mt-6 flex justify-end gap-3">
-          <button @click="closeDetail"
-            class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-            Discard Changes
-          </button>
-          <Can permission="role.edit">
-            <button @click="saveChanges" :disabled="rolesStore.loading"
-              class="rounded-lg bg-[#0e7490] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0c6478] disabled:opacity-50">
-              {{ rolesStore.loading ? 'Saving…' : 'Save Changes' }}
-            </button>
-          </Can>
-        </div>
-        <div v-else class="mt-6 flex justify-end">
-          <button @click="closeDetail"
-            class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-            Back to Roles
-          </button>
-        </div>
       </div>
     </div>
 

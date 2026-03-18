@@ -25,13 +25,6 @@ onMounted(async () => {
   }
 })
 
-function getRoleBadgeClass(name: string): string {
-  const lower = name.toLowerCase()
-  if (lower.includes('admin')) return 'bg-teal-50 text-teal-700 border border-teal-200'
-  if (lower.includes('editor')) return 'bg-blue-50 text-blue-700 border border-blue-200'
-  return 'bg-gray-100 text-gray-600 border border-gray-200'
-}
-
 async function login() {
   if (!selectedUserId.value) return
   error.value = null
@@ -73,22 +66,6 @@ async function login() {
           </select>
         </div>
 
-        <!-- Role chips -->
-        <div class="flex items-center justify-center gap-2">
-          <span
-            v-for="u in users"
-            :key="u.id"
-            class="cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-all"
-            :class="[
-              getRoleBadgeClass(u.name),
-              selectedUserId === u.id ? 'ring-2 ring-[#0e7490] ring-offset-1' : ''
-            ]"
-            @click="selectedUserId = u.id"
-          >
-            {{ u.name.split(' ')[0] }}
-          </span>
-        </div>
-
         <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
 
         <button
@@ -100,14 +77,6 @@ async function login() {
         </button>
       </div>
 
-      <p class="mt-6 text-center text-xs text-[#94a3b8]">Securely managing permissions for your organization.</p>
-    </div>
-
-    <!-- Footer -->
-    <div class="mt-6 flex gap-4 text-sm text-[#64748b]">
-      <a href="#" class="hover:text-[#0e7490]">Support</a>
-      <a href="#" class="hover:text-[#0e7490]">Privacy Policy</a>
-      <a href="#" class="hover:text-[#0e7490]">Docs</a>
     </div>
   </div>
 </template>

@@ -6,6 +6,7 @@ import type { ApiResponse, AuthUser } from '@/types/api'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null)
   const loading = ref(false)
+  const sessionChecked = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
   const permissions = computed(() => user.value?.permissions ?? [])
@@ -21,6 +22,8 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       user.value = null
       return false
+    } finally {
+      sessionChecked.value = true
     }
   }
 
@@ -47,8 +50,9 @@ export const useAuthStore = defineStore('auth', () => {
       // ignore
     } finally {
       user.value = null
+      sessionChecked.value = true
     }
   }
 
-  return { user, loading, isAuthenticated, permissions, fetchMe, selectUser, logout }
+  return { user, loading, isAuthenticated, permissions, sessionChecked, fetchMe, selectUser, logout }
 })

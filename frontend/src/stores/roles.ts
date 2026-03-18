@@ -48,8 +48,9 @@ export const useRolesStore = defineStore('roles', () => {
       await fetchRoles()
       return true
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message ?? 'Failed to update role'
+      const err = e as { response?: { data?: { message?: string; errors?: string[] } } }
+      const d = err.response?.data
+      error.value = d?.errors?.[0] ?? d?.message ?? 'Failed to update role'
       return false
     } finally {
       loading.value = false

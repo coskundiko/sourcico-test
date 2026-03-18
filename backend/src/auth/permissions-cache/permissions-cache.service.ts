@@ -30,7 +30,10 @@ export class PermissionsCacheService {
   }
 
   async clearAll(): Promise<void> {
-    const keys = await this.redisClient.keys(`${this.CACHE_PREFIX}*`);
+    const keys: string[] = [];
+    for await (const batch of this.redisClient.scanIterator({ MATCH: `${this.CACHE_PREFIX}*` })) {
+      keys.push(...batch);
+    }
     if (keys.length > 0) {
       await this.redisClient.del(keys);
     }

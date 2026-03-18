@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
+import { PermissionsCacheService } from '../auth/permissions-cache/permissions-cache.service';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +12,7 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+    private readonly permissionsCacheService: PermissionsCacheService,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -31,14 +33,15 @@ export class UsersService {
     });
   }
 
-  async create(data: { name: string; email: string; roleIds: number[] }): Promise<User> {
+  async create(data: { name: string; email: string; roleIds?: number[] }): Promise<User> {
     const existing = await this.findByEmail(data.email);
     if (existing) {
       throw new ConflictException('User with this email already exists');
     }
 
-    const roles = await this.roleRepository.findBy({ id: In(data.roleIds) });
-    if (roles.length !== data.roleIds.length) {
+    const roleIds = data.roleIds ?? [];
+    const roles = roleIds.length > 0 ? await this.roleRepository.findBy({ id: In(roleIds) }) : [];
+    if (roles.length !== roleIds.length) {
       throw new NotFoundException('One or more roles not found');
     }
 
@@ -52,7 +55,7 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async update(id: number, data: { name?: string; roleIds?: number[]; status?: string }): Promise<User> {
+  async update(id: number, data: { name?: string; email?: string; roleIds?: number[]; status?: string }): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -60,6 +63,12 @@ export class UsersService {
 
     if (data.name) user.name = data.name;
     if (data.status) user.status = data.status as UserStatus;
+
+    if (data.email && data.email !== user.email) {
+      const existing = await this.findByEmail(data.email);
+      if (existing) throw new ConflictException('User with this email already exists');
+      user.email = data.email;
+    }
 
     if (data.roleIds) {
       const roles = await this.roleRepository.findBy({ id: In(data.roleIds) });
@@ -69,7 +78,9 @@ export class UsersService {
       user.roles = roles;
     }
 
-    return this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    await this.permissionsCacheService.invalidate(id);
+    return saved;
   }
 
   async delete(id: number): Promise<void> {

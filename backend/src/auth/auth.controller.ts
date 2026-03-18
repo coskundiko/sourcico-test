@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from '../users/entities/user.entity';
@@ -33,7 +34,7 @@ export class AuthController {
   @Post('select')
   @HttpCode(HttpStatus.OK)
   async selectUser(
-    @Body('userId') userId: number,
+    @Body('userId', ParseIntPipe) userId: number,
     @Session() session: AppSession,
   ): Promise<ApiResponse<ReturnType<AuthController['mapUserResponse']>>> {
     const user = await this.authService.validateUser(userId);

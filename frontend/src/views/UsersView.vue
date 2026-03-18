@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useUsersStore } from '@/stores/users'
 import { useRolesStore } from '@/stores/roles'
 import { usePermissions } from '@/composables/usePermissions'
@@ -9,16 +9,6 @@ import type { UserListItem } from '@/types/api'
 const usersStore = useUsersStore()
 const rolesStore = useRolesStore()
 const { can } = usePermissions()
-
-const search = ref('')
-
-const filteredUsers = computed(() => {
-  if (!search.value) return usersStore.users
-  const q = search.value.toLowerCase()
-  return usersStore.users.filter(
-    (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
-  )
-})
 
 onMounted(async () => {
   await usersStore.fetchUsers()
@@ -44,17 +34,17 @@ function roleBadgeClass(roleName: string): string {
 // Modal state
 const showModal = ref(false)
 const editTarget = ref<UserListItem | null>(null)
-const form = ref({ name: '', email: '', roleId: 0 })
+const form = ref({ name: '', email: '', roleId: null as number | null })
 
 function openAdd() {
   editTarget.value = null
-  form.value = { name: '', email: '', roleId: rolesStore.roles[0]?.id ?? 0 }
+  form.value = { name: '', email: '', roleId: rolesStore.roles[0]?.id ?? null }
   showModal.value = true
 }
 
 function openEdit(user: UserListItem) {
   editTarget.value = user
-  form.value = { name: user.name, email: user.email, roleId: user.roles[0]?.id ?? 0 }
+  form.value = { name: user.name, email: user.email, roleId: user.roles[0]?.id ?? null }
   showModal.value = true
 }
 
@@ -64,18 +54,19 @@ function closeModal() {
 }
 
 async function saveUser() {
+  const roleIds = form.value.roleId ? [form.value.roleId] : []
   let ok = false
   if (editTarget.value) {
     ok = await usersStore.updateUser(editTarget.value.id, {
       name: form.value.name,
       email: form.value.email,
-      roleIds: [form.value.roleId],
+      roleIds,
     })
   } else {
     ok = await usersStore.createUser({
       name: form.value.name,
       email: form.value.email,
-      roleIds: [form.value.roleId],
+      roleIds,
     })
   }
   if (ok) closeModal()
@@ -89,17 +80,7 @@ async function deleteUser(id: number) {
 
 <template>
   <div>
-    <!-- Search + Add in header area -->
-    <div class="mb-4 flex items-center justify-between">
-      <div class="relative">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-gray-400">search</span>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Search users..."
-          class="w-60 rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490]/20"
-        />
-      </div>
+    <Teleport defer to="#header-actions">
       <Can permission="user.create">
         <button
           @click="openAdd"
@@ -109,7 +90,7 @@ async function deleteUser(id: number) {
           Add User
         </button>
       </Can>
-    </div>
+    </Teleport>
 
     <p v-if="usersStore.error" class="mb-4 text-sm text-red-600">{{ usersStore.error }}</p>
 
@@ -129,10 +110,10 @@ async function deleteUser(id: number) {
           <tr v-if="usersStore.loading">
             <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-400">Loading…</td>
           </tr>
-          <tr v-else-if="filteredUsers.length === 0">
+          <tr v-else-if="usersStore.users.length === 0">
             <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-400">No users found.</td>
           </tr>
-          <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-gray-50">
+          <tr v-for="user in usersStore.users" :key="user.id" class="hover:bg-gray-50">
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#cffafe] text-xs font-bold text-[#0e7490]">
@@ -210,6 +191,7 @@ async function deleteUser(id: number) {
             <label class="mb-1.5 block text-sm font-semibold text-[#1e293b]">Role</label>
             <select v-model="form.roleId"
               class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#0e7490] focus:outline-none">
+              <option :value="null">— No role —</option>
               <option v-for="role in rolesStore.roles" :key="role.id" :value="role.id">{{ role.name }}</option>
             </select>
           </div>

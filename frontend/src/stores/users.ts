@@ -17,7 +17,7 @@ export const useUsersStore = defineStore('users', () => {
         users.value = res.data.data
       }
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } }
+      const err = e as { response?: { data?: { message?: string; errors?: string[] } } }
       error.value = err.response?.data?.message ?? 'Failed to load users'
     } finally {
       loading.value = false
@@ -32,8 +32,9 @@ export const useUsersStore = defineStore('users', () => {
       await fetchUsers()
       return true
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message ?? 'Failed to create user'
+      const err = e as { response?: { data?: { message?: string; errors?: string[] } } }
+      const d = err.response?.data
+      error.value = d?.errors?.[0] ?? d?.message ?? 'Failed to create user'
       return false
     } finally {
       loading.value = false
@@ -48,8 +49,9 @@ export const useUsersStore = defineStore('users', () => {
       await fetchUsers()
       return true
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } }
-      error.value = err.response?.data?.message ?? 'Failed to update user'
+      const err = e as { response?: { data?: { message?: string; errors?: string[] } } }
+      const d = err.response?.data
+      error.value = d?.errors?.[0] ?? d?.message ?? 'Failed to update user'
       return false
     } finally {
       loading.value = false
@@ -64,7 +66,7 @@ export const useUsersStore = defineStore('users', () => {
       await fetchUsers()
       return true
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { message?: string } } }
+      const err = e as { response?: { data?: { message?: string; errors?: string[] } } }
       error.value = err.response?.data?.message ?? 'Failed to delete user'
       return false
     } finally {

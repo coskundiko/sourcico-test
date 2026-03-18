@@ -38,7 +38,7 @@ router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore()
 
   // Try to restore session once on first navigation
-  if (auth.user === null && to.meta.requiresAuth) {
+  if (!auth.sessionChecked) {
     await auth.fetchMe()
   }
 

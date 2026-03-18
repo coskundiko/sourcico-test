@@ -4,6 +4,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User, UserStatus } from './entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
+import { PermissionsCacheService } from '../auth/permissions-cache/permissions-cache.service';
 import { UserFactory } from '../database/factories/user.factory';
 import { RoleFactory } from '../database/factories/role.factory';
 
@@ -19,6 +20,10 @@ const mockRoleRepository = {
   findBy: jest.fn(),
 };
 
+const mockPermissionsCacheService = {
+  invalidate: jest.fn(),
+};
+
 describe('UsersService', () => {
   let service: UsersService;
 
@@ -28,6 +33,7 @@ describe('UsersService', () => {
         UsersService,
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: getRepositoryToken(Role), useValue: mockRoleRepository },
+        { provide: PermissionsCacheService, useValue: mockPermissionsCacheService },
       ],
     }).compile();
 

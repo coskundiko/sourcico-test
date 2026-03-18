@@ -5,8 +5,10 @@ import { Role } from './entities/role.entity';
 import { RolePermission } from './entities/role-permission.entity';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
+import { PermissionsCacheService } from '../auth/permissions-cache/permissions-cache.service';
 
-const PROTECTED_ROLES = ['Admin'];
+const PROTECTED_ROLES = ['admin'];
+const isProtected = (name: string) => PROTECTED_ROLES.includes(name.toLowerCase());
 
 @Injectable()
 export class RolesService {
@@ -16,10 +18,11 @@ export class RolesService {
     @InjectRepository(RolePermission)
     private readonly rolePermissionRepository: Repository<RolePermission>,
     private readonly dataSource: DataSource,
+    private readonly permissionsCacheService: PermissionsCacheService,
   ) {}
 
   async findAll(): Promise<Role[]> {
-    return this.roleRepository.find({ relations: ['permissions', 'users'] });
+    return this.roleRepository.find({ relations: ['permissions', 'users'], order: { name: 'ASC' } });
   }
 
   async findById(id: number): Promise<Role | null> {
@@ -44,11 +47,11 @@ export class RolesService {
       throw new NotFoundException('Role not found');
     }
 
-    if (PROTECTED_ROLES.includes(role.name) && dto.permissionCodes !== undefined) {
+    if (isProtected(role.name) && dto.permissionCodes !== undefined) {
       throw new BadRequestException('Cannot modify permissions of the Admin role');
     }
 
-    return this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       if (dto.name) {
         role.name = dto.name;
       }
@@ -65,6 +68,9 @@ export class RolesService {
 
       return manager.save(Role, role);
     });
+
+    await this.permissionsCacheService.clearAll();
+    return result;
   }
 
   async delete(id: number): Promise<void> {
@@ -73,7 +79,7 @@ export class RolesService {
       throw new NotFoundException('Role not found');
     }
 
-    if (PROTECTED_ROLES.includes(role.name)) {
+    if (isProtected(role.name)) {
       throw new BadRequestException('Cannot delete the Admin role');
     }
 
@@ -82,5 +88,6 @@ export class RolesService {
     }
 
     await this.roleRepository.remove(role);
+    await this.permissionsCacheService.clearAll();
   }
 }
